@@ -39,6 +39,8 @@ struct sway_transaction_instruction {
 	bool waiting;
 };
 
+struct inner_gaps nogaps = {.horizontal = 0, .vertical = 0};
+
 static struct sway_transaction *transaction_create(void) {
 	struct sway_transaction *transaction =
 		calloc(1, sizeof(struct sway_transaction));
@@ -284,11 +286,11 @@ static void disable_container(struct sway_container *con) {
 }
 
 static void arrange_container(struct sway_container *con,
-		int width, int height, bool title_bar, int gaps);
+		int width, int height, bool title_bar, struct inner_gaps gaps);
 
 static void arrange_children(enum sway_container_layout layout, list_t *children,
 		struct sway_container *active, struct wlr_scene_tree *content,
-		int width, int height, int gaps) {
+		int width, int height, struct inner_gaps gaps) {
 	int title_bar_height = container_titlebar_height();
 
 	if (layout == L_TABBED) {
@@ -315,7 +317,7 @@ static void arrange_children(enum sway_container_layout layout, list_t *children
 
 			int net_height = height - title_bar_height;
 			if (activated && width > 0 && net_height > 0) {
-				arrange_container(child, width, net_height, title_bar_height == 0, 0);
+				arrange_container(child, width, net_height, title_bar_height == 0, nogaps);
 			} else {
 				disable_container(child);
 			}
@@ -345,7 +347,7 @@ static void arrange_children(enum sway_container_layout layout, list_t *children
 
 			int net_height = height - title_height;
 			if (activated && width > 0 && net_height > 0) {
-				arrange_container(child, width, net_height, title_bar_height == 0, 0);
+				arrange_container(child, width, net_height, title_bar_height == 0, nogaps);
 			} else {
 				disable_container(child);
 			}
@@ -363,7 +365,7 @@ static void arrange_children(enum sway_container_layout layout, list_t *children
 			wlr_scene_node_reparent(&child->scene_tree->node, content);
 			if (width > 0 && cheight > 0) {
 				arrange_container(child, width, cheight, true, gaps);
-				off += cheight + gaps;
+				off += cheight + gaps.vertical;
 			} else {
 				disable_container(child);
 			}
@@ -379,7 +381,7 @@ static void arrange_children(enum sway_container_layout layout, list_t *children
 			wlr_scene_node_reparent(&child->scene_tree->node, content);
 			if (cwidth > 0 && height > 0) {
 				arrange_container(child, cwidth, height, true, gaps);
-				off += cwidth + gaps;
+				off += cwidth + gaps.horizontal;
 			} else {
 				disable_container(child);
 			}
@@ -390,7 +392,7 @@ static void arrange_children(enum sway_container_layout layout, list_t *children
 }
 
 static void arrange_container(struct sway_container *con,
-		int width, int height, bool title_bar, int gaps) {
+		int width, int height, bool title_bar, struct inner_gaps gaps) {
 	// this container might have previously been in the scratchpad,
 	// make sure it's enabled for viewing
 	wlr_scene_node_set_enabled(&con->scene_tree->node, true);
@@ -471,7 +473,7 @@ static void arrange_container(struct sway_container *con,
 	}
 }
 
-static int container_get_gaps(struct sway_container *con) {
+static struct inner_gaps container_get_gaps(struct sway_container *con) {
 	struct sway_workspace *ws = con->current.workspace;
 	struct sway_container *temp = con;
 	while (temp) {
@@ -482,7 +484,7 @@ static int container_get_gaps(struct sway_container *con) {
 			layout = ws->current.layout;
 		}
 		if (layout == L_TABBED || layout == L_STACKED) {
-			return 0;
+			return nogaps;
 		}
 		temp = temp->pending.parent;
 	}

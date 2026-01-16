@@ -314,6 +314,12 @@ struct side_gaps {
 	int left;
 };
 
+struct inner_gaps {
+    int horizontal;
+    int vertical;
+};
+
+
 enum smart_gaps_mode {
 	SMART_GAPS_OFF,
 	SMART_GAPS_ON,
@@ -327,7 +333,7 @@ enum smart_gaps_mode {
 struct workspace_config {
 	char *workspace;
 	list_t *outputs;
-	int gaps_inner;
+	struct inner_gaps gaps_inner;
 	struct side_gaps gaps_outer;
 };
 
@@ -552,7 +558,7 @@ struct sway_config {
 	int tiling_drag_threshold;
 
 	enum smart_gaps_mode smart_gaps;
-	int gaps_inner;
+	struct inner_gaps gaps_inner;
 	struct side_gaps gaps_outer;
 
 	list_t *config_chain;
