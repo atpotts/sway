@@ -56,7 +56,7 @@ static void apply_horiz_layout(list_t *children, struct wlr_box *parent) {
 	struct sway_container *child = children->items[0];
 	struct sway_workspace *ws = child->pending.workspace;
 	if (ws) {
-		inner_gap = ws->gaps_inner;
+		inner_gap = ws->gaps_inner.horizontal;
 	}
 	// Descendants of tabbed/stacked containers don't have gaps
 	struct sway_container *temp = child;
@@ -141,7 +141,7 @@ static void apply_vert_layout(list_t *children, struct wlr_box *parent) {
 	struct sway_container *child = children->items[0];
 	struct sway_workspace *ws = child->pending.workspace;
 	if (ws) {
-		inner_gap = ws->gaps_inner;
+		inner_gap = ws->gaps_inner.vertical;
 	}
 	// Descendants of tabbed/stacked containers don't have gaps
 	struct sway_container *temp = child;

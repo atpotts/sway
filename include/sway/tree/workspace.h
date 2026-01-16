@@ -41,7 +41,7 @@ struct sway_workspace {
 	enum sway_container_layout prev_split_layout;
 
 	struct side_gaps current_gaps;
-	int gaps_inner;
+	struct inner_gaps gaps_inner;
 	struct side_gaps gaps_outer;
 
 	struct sway_output *output; // NULL if no outputs are connected

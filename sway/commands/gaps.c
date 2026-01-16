@@ -16,7 +16,10 @@ enum gaps_op {
 };
 
 struct gaps_data {
-	bool inner;
+	struct {
+		bool horizontal;
+		bool vertical;
+	} inner;
 	struct {
 		bool top;
 		bool right;
@@ -29,23 +32,23 @@ struct gaps_data {
 
 // Prevent negative outer gaps from moving windows out of the workspace.
 static void prevent_invalid_outer_gaps(void) {
-	if (config->gaps_outer.top < -config->gaps_inner) {
-		config->gaps_outer.top = -config->gaps_inner;
+	if (config->gaps_outer.top < -config->gaps_inner.vertical) {
+		config->gaps_outer.top = -config->gaps_inner.vertical;
 	}
-	if (config->gaps_outer.right < -config->gaps_inner) {
-		config->gaps_outer.right = -config->gaps_inner;
+	if (config->gaps_outer.right < -config->gaps_inner.horizontal) {
+		config->gaps_outer.right = -config->gaps_inner.horizontal;
 	}
-	if (config->gaps_outer.bottom < -config->gaps_inner) {
-		config->gaps_outer.bottom = -config->gaps_inner;
+	if (config->gaps_outer.bottom < -config->gaps_inner.vertical) {
+		config->gaps_outer.bottom = -config->gaps_inner.vertical;
 	}
-	if (config->gaps_outer.left < -config->gaps_inner) {
-		config->gaps_outer.left = -config->gaps_inner;
+	if (config->gaps_outer.left < -config->gaps_inner.horizontal) {
+		config->gaps_outer.left = -config->gaps_inner.horizontal;
 	}
 }
 
-// gaps inner|outer|horizontal|vertical|top|right|bottom|left <px>
+// gaps inner|outer|horizontal|vertical|top|right|bottom|left|inner_horizontal|inner_vertical <px>
 static const char expected_defaults[] =
-	"'gaps inner|outer|horizontal|vertical|top|right|bottom|left <px>'";
+	"'gaps inner|outer|horizontal|vertical|top|right|bottom|left|inner_horizontal|inner_vertical <px>'";
 static struct cmd_results *gaps_set_defaults(int argc, char **argv) {
 	struct cmd_results *error = checkarg(argc, "gaps", EXPECTED_EQUAL_TO, 2);
 	if (error) {
@@ -61,7 +64,14 @@ static struct cmd_results *gaps_set_defaults(int argc, char **argv) {
 	bool valid = false;
 	if (!strcasecmp(argv[0], "inner")) {
 		valid = true;
-		config->gaps_inner = (amount >= 0) ? amount : 0;
+		config->gaps_inner.horizontal = (amount >= 0) ? amount : 0;
+		config->gaps_inner.vertical = (amount >= 0) ? amount : 0;
+	} else if (!strcasecmp(argv[0], "inner_horizontal")) {
+		valid = true;
+		config->gaps_inner.horizontal = (amount >= 0) ? amount : 0;
+	} else if (!strcasecmp(argv[0], "inner_vertical")) {
+		valid = true;
+		config->gaps_inner.vertical = (amount >= 0) ? amount : 0;
 	} else {
 		if (!strcasecmp(argv[0], "outer") || !strcasecmp(argv[0], "vertical")
 				|| !strcasecmp(argv[0], "top")) {
@@ -112,8 +122,11 @@ static void apply_gaps_op(int *prop, enum gaps_op op, int amount) {
 static void configure_gaps(struct sway_workspace *ws, void *_data) {
 	// Apply operation to gaps
 	struct gaps_data *data = _data;
-	if (data->inner) {
-		apply_gaps_op(&ws->gaps_inner, data->operation, data->amount);
+	if (data->inner.horizontal) {
+		apply_gaps_op(&(ws->gaps_inner.horizontal), data->operation, data->amount);
+	}
+	if (data->inner.vertical) {
+		apply_gaps_op(&(ws->gaps_inner.vertical), data->operation, data->amount);
 	}
 	if (data->outer.top) {
 		apply_gaps_op(&(ws->gaps_outer.top), data->operation, data->amount);
@@ -129,8 +142,11 @@ static void configure_gaps(struct sway_workspace *ws, void *_data) {
 	}
 
 	// Prevent invalid gaps configurations.
-	if (ws->gaps_inner < 0) {
-		ws->gaps_inner = 0;
+	if (ws->gaps_inner.horizontal < 0) {
+		ws->gaps_inner.horizontal = 0;
+	}
+	if (ws->gaps_inner.vertical < 0) {
+		ws->gaps_inner.vertical = 0;
 	}
 	prevent_invalid_outer_gaps();
 	arrange_workspace(ws);
@@ -139,7 +155,7 @@ static void configure_gaps(struct sway_workspace *ws, void *_data) {
 // gaps inner|outer|horizontal|vertical|top|right|bottom|left current|all
 // set|plus|minus|toggle <px>
 static const char expected_runtime[] = "'gaps inner|outer|horizontal|vertical|"
-	"top|right|bottom|left current|all set|plus|minus|toggle <px>'";
+	"top|right|bottom|left|inner_horizontal|inner_vertical current|all set|plus|minus|toggle <px>'";
 static struct cmd_results *gaps_set_runtime(int argc, char **argv) {
 	struct cmd_results *error = checkarg(argc, "gaps", EXPECTED_EQUAL_TO, 4);
 	if (error) {
@@ -153,7 +169,12 @@ static struct cmd_results *gaps_set_runtime(int argc, char **argv) {
 	struct gaps_data data = {0};
 
 	if (strcasecmp(argv[0], "inner") == 0) {
-		data.inner = true;
+		data.inner.horizontal = true;
+		data.inner.vertical = true;
+	} else if (strcasecmp(argv[0], "inner_horizontal") == 0) {
+		data.inner.horizontal = true;
+	} else if (strcasecmp(argv[0], "inner_vertical") == 0) {
+		data.inner.vertical = true;
 	} else {
 		data.outer.top = !strcasecmp(argv[0], "outer") ||
 			!strcasecmp(argv[0], "vertical") || !strcasecmp(argv[0], "top");
@@ -164,8 +185,9 @@ static struct cmd_results *gaps_set_runtime(int argc, char **argv) {
 		data.outer.left = !strcasecmp(argv[0], "outer") ||
 			!strcasecmp(argv[0], "horizontal") || !strcasecmp(argv[0], "left");
 	}
-	if (!data.inner && !data.outer.top && !data.outer.right &&
-			!data.outer.bottom && !data.outer.left) {
+	if (!data.inner.horizontal && !data.inner.vertical
+			&& !data.outer.top && !data.outer.right
+			&& !data.outer.bottom && !data.outer.left) {
 		return cmd_results_new(CMD_INVALID, "Expected %s", expected_runtime);
 	}
 

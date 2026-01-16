@@ -107,8 +107,11 @@ struct sway_workspace *workspace_create(struct sway_output *output,
 			if (wsc->gaps_outer.left != INT_MIN) {
 				ws->gaps_outer.left = wsc->gaps_outer.left;
 			}
-			if (wsc->gaps_inner != INT_MIN) {
-				ws->gaps_inner = wsc->gaps_inner;
+			if (wsc->gaps_inner.horizontal != INT_MIN) {
+				ws->gaps_inner.horizontal = wsc->gaps_inner.horizontal;
+			}
+			if (wsc->gaps_inner.vertical != INT_MIN) {
+				ws->gaps_inner.vertical = wsc->gaps_inner.vertical;
 			}
 
 			// Add output priorities
@@ -877,10 +880,10 @@ void workspace_add_gaps(struct sway_workspace *ws) {
 	}
 
 	// Add inner gaps and make sure we don't turn out negative
-	ws->current_gaps.top = fmax(0, ws->current_gaps.top + ws->gaps_inner);
-	ws->current_gaps.right = fmax(0, ws->current_gaps.right + ws->gaps_inner);
-	ws->current_gaps.bottom = fmax(0, ws->current_gaps.bottom + ws->gaps_inner);
-	ws->current_gaps.left = fmax(0, ws->current_gaps.left + ws->gaps_inner);
+	ws->current_gaps.top = fmax(0, ws->current_gaps.top + ws->gaps_inner.vertical);
+	ws->current_gaps.right = fmax(0, ws->current_gaps.right + ws->gaps_inner.horizontal);
+	ws->current_gaps.bottom = fmax(0, ws->current_gaps.bottom + ws->gaps_inner.vertical);
+	ws->current_gaps.left = fmax(0, ws->current_gaps.left + ws->gaps_inner.horizontal);
 
 	// Now that we have the total gaps calculated we may need to clamp them in
 	// case they've made the available area too small

@@ -21,7 +21,8 @@ static struct workspace_config *workspace_config_find_or_create(char *ws_name) {
 	}
 	wsc->workspace = strdup(ws_name);
 	wsc->outputs = create_list();
-	wsc->gaps_inner = INT_MIN;
+	wsc->gaps_inner.horizontal = INT_MIN;
+	wsc->gaps_inner.vertical = INT_MIN;
 	wsc->gaps_outer.top = INT_MIN;
 	wsc->gaps_outer.right = INT_MIN;
 	wsc->gaps_outer.bottom = INT_MIN;
@@ -38,27 +39,27 @@ void free_workspace_config(struct workspace_config *wsc) {
 
 static void prevent_invalid_outer_gaps(struct workspace_config *wsc) {
 	if (wsc->gaps_outer.top != INT_MIN &&
-			wsc->gaps_outer.top < -wsc->gaps_inner) {
-		wsc->gaps_outer.top = -wsc->gaps_inner;
+			wsc->gaps_outer.top < -wsc->gaps_inner.vertical) {
+		wsc->gaps_outer.top = -wsc->gaps_inner.vertical;
 	}
 	if (wsc->gaps_outer.right != INT_MIN &&
-			wsc->gaps_outer.right < -wsc->gaps_inner) {
-		wsc->gaps_outer.right = -wsc->gaps_inner;
+			wsc->gaps_outer.right < -wsc->gaps_inner.horizontal) {
+		wsc->gaps_outer.right = -wsc->gaps_inner.horizontal;
 	}
 	if (wsc->gaps_outer.bottom != INT_MIN &&
-			wsc->gaps_outer.bottom < -wsc->gaps_inner) {
-		wsc->gaps_outer.bottom = -wsc->gaps_inner;
+			wsc->gaps_outer.bottom < -wsc->gaps_inner.vertical) {
+		wsc->gaps_outer.bottom = -wsc->gaps_inner.vertical;
 	}
 	if (wsc->gaps_outer.left != INT_MIN &&
-			wsc->gaps_outer.left < -wsc->gaps_inner) {
-		wsc->gaps_outer.left = -wsc->gaps_inner;
+			wsc->gaps_outer.left < -wsc->gaps_inner.horizontal) {
+		wsc->gaps_outer.left = -wsc->gaps_inner.horizontal;
 	}
 }
 
 static struct cmd_results *cmd_workspace_gaps(int argc, char **argv,
 		int gaps_location) {
 	const char expected[] = "Expected 'workspace <name> gaps "
-		"inner|outer|horizontal|vertical|top|right|bottom|left <px>'";
+		"inner|outer|horizontal|vertical|top|right|bottom|left|inner_horizontal|inner_vertical <px>'";
 	if (gaps_location == 0) {
 		return cmd_results_new(CMD_INVALID, "%s", expected);
 	}
@@ -85,7 +86,14 @@ static struct cmd_results *cmd_workspace_gaps(int argc, char **argv,
 	char *type = argv[gaps_location + 1];
 	if (!strcasecmp(type, "inner")) {
 		valid = true;
-		wsc->gaps_inner = (amount >= 0) ? amount : 0;
+		wsc->gaps_inner.horizontal = (amount >= 0) ? amount : 0;
+		wsc->gaps_inner.vertical = (amount >= 0) ? amount : 0;
+	} else if (!strcasecmp(type, "inner_horizontal")) {
+		valid = true;
+		wsc->gaps_inner.horizontal = (amount >= 0) ? amount : 0;
+	} else if (!strcasecmp(type, "inner_vertical")) {
+		valid = true;
+		wsc->gaps_inner.vertical = (amount >= 0) ? amount : 0;
 	} else {
 		if (!strcasecmp(type, "outer") || !strcasecmp(type, "vertical")
 				|| !strcasecmp(type, "top")) {
@@ -113,8 +121,11 @@ static struct cmd_results *cmd_workspace_gaps(int argc, char **argv,
 	}
 
 	// Prevent invalid gaps configurations.
-	if (wsc->gaps_inner != INT_MIN && wsc->gaps_inner < 0) {
-		wsc->gaps_inner = 0;
+	if (wsc->gaps_inner.horizontal != INT_MIN && wsc->gaps_inner.horizontal < 0) {
+		wsc->gaps_inner.horizontal = 0;
+	}
+	if (wsc->gaps_inner.vertical != INT_MIN && wsc->gaps_inner.vertical < 0) {
+		wsc->gaps_inner.vertical = 0;
 	}
 	prevent_invalid_outer_gaps(wsc);
 
