@@ -307,15 +307,15 @@ static void arrange_children(enum sway_container_layout layout, list_t *children
 			struct sway_container *child = children->items[i];
 			bool activated = child == active;
 			int next_title_offset = round(w * i + w);
+			int net_height = height - title_bar_height;
 
-			arrange_title_bar(child, title_offset, -title_bar_height,
+			arrange_title_bar(child, title_offset, net_height,
 				next_title_offset - title_offset, title_bar_height);
 			wlr_scene_node_set_enabled(&child->border.tree->node, activated);
 			wlr_scene_node_set_enabled(&child->scene_tree->node, true);
-			wlr_scene_node_set_position(&child->scene_tree->node, 0, title_bar_height);
+			wlr_scene_node_set_position(&child->scene_tree->node, 0, 0);
 			wlr_scene_node_reparent(&child->scene_tree->node, content);
 
-			int net_height = height - title_bar_height;
 			if (activated && width > 0 && net_height > 0) {
 				arrange_container(child, width, net_height, title_bar_height == 0, nogaps);
 			} else {
@@ -333,19 +333,18 @@ static void arrange_children(enum sway_container_layout layout, list_t *children
 		}
 
 		int title_height = title_bar_height * children->length;
-
-		int y = 0;
+		int net_height = height - title_height;
+		int y = net_height;
 		for (int i = 0; i < children->length; i++) {
 			struct sway_container *child = children->items[i];
 			bool activated = child == active;
 
-			arrange_title_bar(child, 0, y - title_height, width, title_bar_height);
+			arrange_title_bar(child, 0, y, width, title_bar_height);
 			wlr_scene_node_set_enabled(&child->border.tree->node, activated);
 			wlr_scene_node_set_enabled(&child->scene_tree->node, true);
-			wlr_scene_node_set_position(&child->scene_tree->node, 0, title_height);
+			wlr_scene_node_set_position(&child->scene_tree->node, 0, 0);
 			wlr_scene_node_reparent(&child->scene_tree->node, content);
 
-			int net_height = height - title_height;
 			if (activated && width > 0 && net_height > 0) {
 				arrange_container(child, width, net_height, title_bar_height == 0, nogaps);
 			} else {
@@ -402,38 +401,38 @@ static void arrange_container(struct sway_container *con,
 	}
 
 	if (con->view) {
-		int border_top = container_titlebar_height();
+		int border_bottom = container_titlebar_height();
 		int border_width = con->current.border_thickness;
 
 		if (title_bar && con->current.border != B_NORMAL) {
 			wlr_scene_node_set_enabled(&con->title_bar.tree->node, false);
-			wlr_scene_node_set_enabled(&con->border.top->node, true);
+			wlr_scene_node_set_enabled(&con->border.bottom->node, true);
 		} else {
-			wlr_scene_node_set_enabled(&con->border.top->node, false);
+			wlr_scene_node_set_enabled(&con->border.bottom->node, false);
 		}
 
 		if (con->current.border == B_NORMAL) {
 			if (title_bar) {
-				arrange_title_bar(con, 0, 0, width, border_top);
+				arrange_title_bar(con, 0, height - border_bottom, width, border_bottom);
 			} else {
-				border_top = 0;
+				border_bottom = 0;
 				// should be handled by the parent container
 			}
 		} else if (con->current.border == B_PIXEL) {
 			container_update(con);
-			border_top = title_bar && con->current.border_top ? border_width : 0;
+			border_bottom = title_bar && con->current.border_bottom ? border_width : 0;
 		} else if (con->current.border == B_NONE) {
 			container_update(con);
-			border_top = 0;
+			border_bottom = 0;
 			border_width = 0;
 		} else if (con->current.border == B_CSD) {
-			border_top = 0;
+			border_bottom = 0;
 			border_width = 0;
 		} else {
 			sway_assert(false, "unreachable");
 		}
 
-		int border_bottom = con->current.border_bottom ? border_width : 0;
+		int border_top = con->current.border_top ? border_width : 0;
 		int border_left = con->current.border_left ? border_width : 0;
 		int border_right = con->current.border_right ? border_width : 0;
 		int vert_border_height = MAX(0, height - border_top - border_bottom);
