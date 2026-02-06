@@ -350,10 +350,10 @@ void view_autoconfigure(struct sway_view *view) {
 			enum sway_container_layout layout = container_parent_layout(con);
 			if (layout == L_TABBED) {
 				y_offset = container_titlebar_height();
-				con->pending.border_top = false;
+				con->pending.border_bottom = false;
 			} else if (layout == L_STACKED) {
 				y_offset = container_titlebar_height() * siblings->length;
-				con->pending.border_top = false;
+				con->pending.border_bottom = false;
 			}
 		}
 	}
@@ -364,13 +364,13 @@ void view_autoconfigure(struct sway_view *view) {
 	case B_CSD:
 	case B_NONE:
 		x = con->pending.x;
-		y = con->pending.y + y_offset;
+		y = con->pending.y;
 		width = con->pending.width;
 		height = con->pending.height - y_offset;
 		break;
 	case B_PIXEL:
 		x = con->pending.x + con->pending.border_thickness * con->pending.border_left;
-		y = con->pending.y + con->pending.border_thickness * con->pending.border_top + y_offset;
+		y = con->pending.y + con->pending.border_thickness * con->pending.border_top;
 		width = con->pending.width
 			- con->pending.border_thickness * con->pending.border_left
 			- con->pending.border_thickness * con->pending.border_right;
@@ -385,13 +385,13 @@ void view_autoconfigure(struct sway_view *view) {
 			- con->pending.border_thickness * con->pending.border_left
 			- con->pending.border_thickness * con->pending.border_right;
 		if (y_offset) {
-			y = con->pending.y + y_offset;
+			y = con->pending.y;
 			height = con->pending.height - y_offset
-				- con->pending.border_thickness * con->pending.border_bottom;
+				- con->pending.border_thickness * con->pending.border_top;
 		} else {
-			y = con->pending.y + container_titlebar_height();
+			y = con->pending.y;
 			height = con->pending.height - container_titlebar_height()
-				- con->pending.border_thickness * con->pending.border_bottom;
+				- con->pending.border_thickness * con->pending.border_top;
 		}
 		break;
 	}
